@@ -7,6 +7,8 @@
   "author": "SAM CLI",
   "license": "MIT",
   "scripts": {
+    "start": "nest start",
+    "dev": "nest start --watch",
     "build": "tsc --build",
     "unit": "jest",
     "lint": "eslint '*.ts' --quiet --fix",
@@ -15,7 +17,10 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.2.0",
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/typeorm": "^11.0.0",
     "@types/aws-lambda": "^8.10.92",
+    "@types/express": "^5.0.3",
     "@types/jest": "^29.2.0",
     "@types/node": "^20.5.7",
     "@typescript-eslint/eslint-plugin": "^5.10.2",
@@ -28,6 +33,13 @@
     "prettier": "^2.5.1",
     "ts-jest": "^29.0.5",
     "ts-node": "^10.9.1",
-    "typescript": "^4.8.4"
+    "typeorm": "^0.3.27",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@nestjs/platform-express": "^11.1.6",
+    "@nestjs/platform-fastify": "^11.1.6",
+    "body-parser": "^2.2.0",
+    "zod": "^4.1.12"
   }
 }
