@@ -1,0 +1,42 @@
+version: 0.2
+
+env:
+  variables:
+    EC2_USER: ec2-user
+    EC2_HOST: 18.231.178.29          # Substitua pelo IP público da sua EC2
+    EC2_KEY_PATH: /tmp/Hands-On.pem  # Caminho onde a chave será colocada no container
+    APP_DIR: /home/ec2-user/app     # Diretório na EC2 para colocar o NestJS
+    EC2_KEY_SECRET_ID: my-ec2-key          # Nome do segredo no Secrets Manager
+
+    AMBIENTE: dev
+    API_KEY: gQV5g<1A<6c7
+    DEV_USER_NAME: root
+    DEV_PASSWORD: root
+    DB_URL_NODE: database_url
+    DB_POOL_TIMEOUT: 120
+    DB_POOL_MAX: 10
+    DB_POOL_MIN: 1
+
+phases:
+  install:
+      - echo "🔑 Recuperando chave privada do Secrets Manager..."
+      - aws secretsmanager get-secret-value --secret-id my-ec2-key --query SecretString --output text | jq -r '.pem' > $EC2_KEY_PATH
+      - chmod 400 $EC2_KEY_PATH
+      - echo "🟢 Instalando dependências..."
+      - npm install
+  build:
+    commands:
+      - echo "⚙️ Compilando TypeScript..."
+      - npm run build
+  post_build:
+    commands:
+      - echo "📦 Preparando artefatos..."
+      - mkdir -p dist-artifacts
+      - cp -r dist/* dist-artifacts/
+      - echo "🚀 Copiando build para o EC2..."
+      - scp -o StrictHostKeyChecking=no -i $EC2_KEY_PATH -r dist-artifacts/* $EC2_USER@$EC2_HOST:$APP_DIR
+      - echo "🔥 Iniciando aplicação NestJS na EC2..."
+      - ssh -o StrictHostKeyChecking=no -i $EC2_KEY_PATH $EC2_USER@$EC2_HOST "cd $APP_DIR && nohup node main.js > nestjs.log 2>&1 &"
+artifacts:
+  files:
+    - '**/*'
