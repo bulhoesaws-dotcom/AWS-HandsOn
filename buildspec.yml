@@ -4,10 +4,7 @@ env:
   variables:
     EC2_USER: ec2-user
     EC2_HOST: 18.231.178.29
-    EC2_KEY_PATH: /tmp/Hands-On.pem
     APP_DIR: /home/ec2-user/app
-    EC2_KEY_SECRET_ID: my-ec2-key
-
     AMBIENTE: dev
     API_KEY: gQV5g<1A<6c7
     DEV_USER_NAME: root
@@ -16,13 +13,15 @@ env:
     DB_POOL_TIMEOUT: 120
     DB_POOL_MAX: 10
     DB_POOL_MIN: 1
+  secrets-manager:
+    EC2_KEY_PEM: my-ec2-key:SecretString.pem  # Recupera a chave privada do Secrets Manager
 
 phases:
   install:
     commands:
-      - echo "🔑 Recuperando chave privada do Secrets Manager..."
-      - aws secretsmanager get-secret-value --secret-id $EC2_KEY_SECRET_ID --query SecretString --output text > $EC2_KEY_PATH
-      - chmod 400 $EC2_KEY_PATH
+      - echo "🔑 Salvando chave privada temporariamente..."
+      - echo "$EC2_KEY_PEM" > /tmp/key.pem
+      - chmod 400 /tmp/key.pem
       - echo "🟢 Instalando dependências..."
       - npm install
 
@@ -37,9 +36,9 @@ phases:
       - mkdir -p dist-artifacts
       - cp -r dist/* dist-artifacts/
       - echo "🚀 Copiando build para o EC2..."
-      - scp -o StrictHostKeyChecking=no -i $EC2_KEY_PATH -r dist-artifacts/* $EC2_USER@$EC2_HOST:$APP_DIR
+      - scp -o StrictHostKeyChecking=no -i /tmp/key.pem -r dist-artifacts/* $EC2_USER@$EC2_HOST:$APP_DIR
       - echo "🔥 Iniciando aplicação NestJS na EC2..."
-      - ssh -o StrictHostKeyChecking=no -i $EC2_KEY_PATH $EC2_USER@$EC2_HOST "cd $APP_DIR && nohup node dist/main.js > nestjs.log 2>&1 &"
+      - ssh -o StrictHostKeyChecking=no -i /tmp/key.pem $EC2_USER@$EC2_HOST "mkdir -p $APP_DIR && cd $APP_DIR && nohup node dist/main.js > nestjs.log 2>&1 &"
 
 artifacts:
   files:
